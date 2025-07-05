@@ -1,6 +1,4 @@
 require("dotenv").config();
-
-
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
@@ -13,19 +11,23 @@ app.use(cors());
 const API_KEY = process.env.RAWG_API_KEY;
 const BASE_URL = "https://api.rawg.io/api";
 
-// Proxy endpoint for search
 app.get("/games", async (req, res) => {
   try {
-    const { search } = req.query;
+    const { search, page = 1 } = req.query;
+
+    const queryParams = {
+      key: API_KEY,
+      page,
+      ...(search && { search }),
+    };
+
     const response = await axios.get(`${BASE_URL}/games`, {
-      params: {
-        key: API_KEY,
-        search
-      }
+      params: queryParams,
     });
+
     res.json(response.data);
   } catch (error) {
-    console.error(error.message);
+    console.error("RAWG fetch error:", error.message);
     res.status(500).json({ error: "Failed to fetch data from RAWG." });
   }
 });
@@ -33,3 +35,4 @@ app.get("/games", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Express server running on http://localhost:${PORT}`);
 });
+
