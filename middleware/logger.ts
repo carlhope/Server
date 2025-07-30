@@ -1,16 +1,15 @@
 import winston from 'winston';
+import type { Request, Response, NextFunction } from 'express';
 
-const logger = winston.createLogger({
+
+
+export const logger = winston.createLogger({
   level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) =>
-      `[${timestamp}] ${level.toUpperCase()}: ${message}`
-    )
-  ),
-  transports: [
-    new winston.transports.File({ filename: 'server.log' }),
-  ],
+  format: winston.format.simple(),
+  transports: [new winston.transports.Console()],
 });
 
-export default logger;
+export const loggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  logger.info(`${req.method} ${req.url}`);
+  next();
+};
