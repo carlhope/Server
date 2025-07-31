@@ -1,5 +1,6 @@
 import express from 'express';
 import gameRoutes from './routes/gameRoutes.ts';
+import authRoutes from './routes/authRoutes.ts';
 import { apiRateLimiter } from './middleware/rateLimiter.ts';
 import { loggerMiddleware } from './middleware/logger.ts';
 
@@ -16,6 +17,8 @@ app.use(apiRateLimiter);        // Rate limiting for basic abuse protection
 
 // Routes
 app.use('/games', gameRoutes);   // Main route group
+app.use('/auth', authRoutes);
+
 
 // 404 Handler
 app.use((req, res) => {
