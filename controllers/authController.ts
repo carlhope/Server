@@ -1,8 +1,10 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { PrismaClient } from '../generated/prisma/client.js';
 
-const users: { username: string; passwordHash: string }[] = [];
+
+const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 const JWT_EXPIRY = '15m';
@@ -10,29 +12,56 @@ const REFRESH_SECRET = process.env.REFRESH_SECRET || 'refresh_secret';
 const REFRESH_EXPIRY = '7d';
 
 export const register = async (req: Request, res: Response) => {
-  const { username, password } = req.body;
-  const passwordHash = await bcrypt.hash(password, 10);
-  users.push({ username, passwordHash });
-  res.status(201).json({ message: 'User registered' });
+  const { username, email, password } = req.body;
+
+  try {
+    const existingUser = await prisma.user.findUnique({ where: { username } });
+    if (existingUser) {
+      return res.status(409).json({ message: 'Username already taken' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await prisma.user.create({
+      data: {
+        username,
+        email,
+        passwordHash
+      }
+    });
+
+    res.status(201).json({ message: 'User registered' });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 };
 
 export const login = async (req: Request, res: Response) => {
   const { username, password } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    return res.status(401).json({ message: 'Invalid credentials' });
+
+  try {
+    const user = await prisma.user.findUnique({ where: { username } });
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const accessToken = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+    const refreshToken = jwt.sign({ username: user.username }, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRY });
+
+    res
+      .cookie('refreshToken', refreshToken, { httpOnly: true, secure: false })
+      .json({ accessToken });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const accessToken = jwt.sign({ username }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
-  const refreshToken = jwt.sign({ username }, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRY });
-
-  res
-    .cookie('refreshToken', refreshToken, { httpOnly: true, secure: false })
-    .json({ accessToken });
 };
+
 
 export const refreshToken = (req: Request, res: Response) => {
   const token = req.cookies.refreshToken;
+
   if (!token) return res.status(401).json({ message: 'No refresh token' });
 
   try {
