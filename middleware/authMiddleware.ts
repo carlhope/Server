@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
@@ -12,7 +12,12 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   const token = authHeader.split(' ')[1];
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { username: string };
-    req.user = payload;
+    req.user ={
+      id: payload.username,
+      username: payload.username,
+      email: payload.username,
+      
+    }
     next();
   } catch {
     res.status(403).json({ message: 'Token verification failed' });

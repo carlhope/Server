@@ -9,7 +9,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
     "@prisma/client": "^6.13.0",
     "axios": "^1.11.0",
@@ -37,6 +37,8 @@
     "prisma": "^6.13.0",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+
   }
 }

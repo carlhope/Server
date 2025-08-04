@@ -1,5 +1,6 @@
 
 import axios from 'axios';
+import { AxiosError } from 'axios';
 import type { Request, Response } from 'express';
 
 
@@ -34,3 +35,43 @@ export const getGames = async (
   }
 };
 
+export const getGameDetails = async (
+  req: Request<{ id: string }>,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+
+    const response = await axios.get(`https://api.rawg.io/api/games/${id}`, {
+      params: {
+        key: process.env.RAWG_API_KEY,
+      },
+    });
+
+    res.status(200).json(response.data);
+  } catch (error) {
+    if (isLikelyAxiosError(error)) {
+      const status = error.response?.status ?? 500;
+
+      if (status === 404) {
+        console.error('RAWG API error: Game not found');
+        return res.status(404).json({ error: 'Game not found' });
+      }
+
+      console.error('RAWG API error:', error.message);
+      return res.status(500).json({ error: 'Failed to fetch game details from RAWG API' });
+    }
+
+    console.error('Unexpected error type:', error);
+    res.status(500).json({ error: 'An unknown error occurred.' });
+  }
+};
+
+function isLikelyAxiosError(error: unknown): error is AxiosError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'isAxiosError' in error &&
+    (error as AxiosError).isAxiosError === true
+  );
+}

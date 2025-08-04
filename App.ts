@@ -1,14 +1,9 @@
 import express from 'express';
-import gameRoutes from './routes/gameRoutes.ts';
-import authRoutes from './routes/authRoutes.ts';
-import { apiRateLimiter } from './middleware/rateLimiter.ts';
-import { loggerMiddleware } from './middleware/logger.ts';
+import gameRoutes from './routes/gameRoutes';
+import authRoutes from './routes/authRoutes';
+import { apiRateLimiter } from './middleware/rateLimiter';
+import { loggerMiddleware } from './middleware/logger';
 import cookieParser from 'cookie-parser';
-
-
-
-
-
 
 const app = express();
 
