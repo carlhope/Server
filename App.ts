@@ -6,6 +6,7 @@ import { loggerMiddleware } from './middleware/logger';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 
+
 const app = express();
 
 // Global Middleware
@@ -24,6 +25,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
+  credentials: true, // Allow cookies to be sent
 }));
 
 // Routes
@@ -35,5 +37,7 @@ app.use('/auth', authRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
+
+
 
 export default app;
