@@ -62,21 +62,6 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-
-export const refreshToken2 = (req: Request, res: Response) => {//change back to refreshToken if other option doesn't work
-  const token = req.cookies.refreshToken;
-
-  if (!token) return res.status(401).json({ message: 'No refresh token' });
-
-  try {
-    const payload = jwt.verify(token, REFRESH_SECRET) as { username: string };
-    const newAccessToken = jwt.sign({ username: payload.username }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
-    res.json({ accessToken: newAccessToken });
-  } catch {
-    res.status(403).json({ message: 'Invalid refresh token' });
-  }
-};
-
 export const logout = (_req: Request, res: Response) => {
   res.clearCookie('refreshToken').json({ message: 'Logged out' });
 };
@@ -87,34 +72,26 @@ export const refreshToken = async (req: Request, res: Response) => {
   console.log("Received refresh token:", token);
 
   if (!token) {
-    console.error("No refresh token provided");
+    console.warn("No refresh token provided - likely user is not logged in");
     return res.status(401).json({ error: 'No refresh token provided' });
   }
 
   try {
     const payload = jwt.verify(token, REFRESH_SECRET) as { userId: string };
 
-    // Optional: verify user still exists
+    // verify user still exists
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) {
       console.error("User not found for refresh token:", payload.userId);
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // ✅ Issue new access token
+    // Issue new access token
     const accessToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
       expiresIn: JWT_EXPIRY,
     });
 
-    // ✅ Optionally rotate refresh token
-    // const newRefreshToken = jwt.sign({ userId: user.id }, REFRESH_SECRET, {
-    //   expiresIn: REFRESH_EXPIRY,
-    // });
-    // res.cookie('refreshToken', newRefreshToken, {
-    //   httpOnly: true,
-    //   secure: true,
-    //   sameSite: 'Strict',
-    // });
+    // TODO: rotate refresh token - will require storing the new token in the database
 
     console.log("New access token issued for user:", user.id);
     return res.json({ accessToken });
